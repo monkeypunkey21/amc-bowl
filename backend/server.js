@@ -31,7 +31,7 @@ io.on('connection', (socket) =>
                 socket.leave(room);
             }
         }
-        
+
         if (!rooms[roomID])
         {
             rooms[roomID] = []
@@ -64,7 +64,7 @@ io.on('connection', (socket) =>
 
     socket.on('disconnect', () =>
     {
-        console.log("Client disconnected")
+        console.log(socket.username + " disconnected")
     } ) 
 })
 
