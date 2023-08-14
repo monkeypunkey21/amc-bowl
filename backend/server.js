@@ -1,38 +1,65 @@
-const express = require('express')
-const http = require('http')
+const app = require('express')();
+const server = require('http').Server(app);
+const io = require('socket.io')(server,
+    {
+        cors: {
+            origin: "*"
+        }
+    });
 const bodyParser = require('body-parser')
-const sockets = require('socket.io')
 const { v4: uuidv4 } = require('uuid');
 
-
-const app = express();
-const server = http.createServer(app);
-const io = sockets(server);
-
+require('dotenv').config()
 const rooms = {} //hash map of rooms. a room is a list of sockets
 
 io.on('connection', (socket) =>
 {
-    console.log('New client connected');
+    socket.username = "Guest_" + socket.id;
+    console.log(socket.username + ' has connected');
 
-    const roomID = socket.handshake.query.roomID;
-
-    if (!rooms[roomID])
+    socket.on('set_username', (username) =>
     {
-        rooms[roomID] = []
-    }
+        socket.username = username;
+    })
 
-    rooms[roomID].push(socket);
+    socket.on('join', (roomID) => {
 
-    socket.join(roomID)
-    
+        for (let room in socket.rooms) //disconnects from all other rooms
+        {
+            if (room !== socket.id)
+            {
+                socket.leave(room);
+            }
+        }
+        
+        if (!rooms[roomID])
+        {
+            rooms[roomID] = []
+        }
+
+        rooms[roomID].push(socket);
+
+        socket.join(roomID)
+        socket.score = 0
+
+        console.log(socket.username + " joined room " + roomID);
+    })
 
     socket.on('message', (data) =>
     {
-        console.log(data); //debugging
         
-        io.to(roomID).emit('message', data);
+        const room = getSocketRoom(socket);
 
+        console.log(data + " was said in room " + room);
+
+        io.to(room).emit('message', data);
+
+    })
+
+    socket.on('leave', (roomID) =>
+    {
+        socket.leave(roomID);
+        console.log(`socket ${socket.id} left room: ${roomID}`)
     })
 
     socket.on('disconnect', () =>
@@ -41,8 +68,19 @@ io.on('connection', (socket) =>
     } ) 
 })
 
+const getSocketRoom = (socket) =>
+{
+    const rooms = Array.from(socket.rooms).filter(room => room !== socket.id)
+
+    return rooms[0] || null;
+}
+
 app.use(bodyParser.json())
 
+app.get('/api', (req, res) =>
+{
+    res.status(200).json({message: "hi"})
+})
 
 server.listen(process.env.PORT, () =>
 {   
