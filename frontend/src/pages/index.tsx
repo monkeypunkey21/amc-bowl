@@ -2,10 +2,11 @@ import {useState} from 'react';
 import Modal from 'react-modal';
 import { v4 as uuidv4 } from 'uuid';
 import useSocket from '../hooks/Socket'
-
+import { useRouter } from 'next/router';
 
 export default function Home() {
 
+  const router = useRouter();
   const [roomID, setRoomID] = useState(uuidv4().slice(0, 8));
   const {socket} = useSocket((state) => ({socket: state.socket}))
 
@@ -14,6 +15,8 @@ export default function Home() {
     e.preventDefault();
 
     socket?.emit('join', roomID);
+
+    router.push('/rooms/' + roomID)
   }
 
   return (
