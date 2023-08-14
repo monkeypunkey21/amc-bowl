@@ -1,22 +1,18 @@
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import Modal from 'react-modal';
 import { v4 as uuidv4 } from 'uuid';
-import { io, Socket } from 'socket.io-client'
+import useSocket from '../hooks/Socket'
 
 
 export default function Home() {
 
   const [roomID, setRoomID] = useState(uuidv4().slice(0, 8));
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const {socket} = useSocket((state) => ({socket: state.socket}))
 
-  useEffect(() => {
-    const socketIO = io('http://localhost:4000');
-    setSocket(socketIO);
-
-  }, [])
-
-  const handleSubmit = () =>
+  const handleSubmit = (e: any) =>
   {
+    e.preventDefault();
+
     socket?.emit('join', roomID);
   }
 
