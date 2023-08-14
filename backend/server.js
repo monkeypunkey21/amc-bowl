@@ -58,13 +58,24 @@ io.on('connection', (socket) =>
 
     socket.on('leave', (roomID) =>
     {
+        removeSocket(socket, roomID);
         socket.leave(roomID);
         console.log(`socket ${socket.id} left room: ${roomID}`)
     })
 
     socket.on('disconnect', () =>
     {
+        try {
+        const roomID = getSocketRoom(socket);
+
+        removeSocket(socket, roomID);
+        socket.leave(roomID);
         console.log(socket.username + " disconnected")
+        }
+        catch (error)
+        {
+            console.error(error);
+        }
     } ) 
 })
 
@@ -75,11 +86,46 @@ const getSocketRoom = (socket) =>
     return rooms[0] || null;
 }
 
+const removeSocket = (sct, roomID) =>
+{
+    const room = rooms[roomID];
+
+    if (room)
+    {
+        room.filter((socket) => socket !== sct)
+        console.log('removed ' + sct.username + ' from room ' + roomID)
+    }
+    
+}
+
 app.use(bodyParser.json())
 
-app.get('/api', (req, res) =>
+app.get('/test', (req, res) =>
 {
     res.status(200).json({message: "hi"})
+})
+
+app.get('/rooms/:id', (req, res) =>
+{
+    const roomID = req.params.id;
+
+    const roomData = rooms[roomID]; //list of sockets in that room
+
+    if (!roomData)
+    {
+        return res.status(404).json({error: 'Room not found'});
+    }
+
+    const clientData = roomData.map(socket => (
+        {
+            username: socket.username,
+            score: socket.score,
+        }
+    ));
+
+    res.status(200).json(clientData);
+
+
 })
 
 server.listen(process.env.PORT, () =>
