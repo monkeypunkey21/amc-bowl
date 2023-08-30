@@ -1,26 +1,26 @@
-import { useRouter } from "next/router"
-import useSocket from '../../hooks/Socket'
+import { useRouter } from "next/router";
+import useSocket from "../../hooks/Socket";
 
-const Room = () =>
-{
-    const router = useRouter();
-    const {id} = router.query;
-    const {socket} = useSocket();
-    
-    return (
-        <div>
-            {id}
-        </div>
-    )
-}
+interface IRoom {}
+
+const Room = ({ roomData }: any) => {
+  const router = useRouter();
+  const { id } = router.query;
+  const { socket } = useSocket();
+
+  return <div>{id}</div>;
+};
 
 export async function getServerSideProps(context: any) {
-    const { id } = context.params;
+  const { id } = context.params;
 
-    return {
-        props: {
-
-        }
-    }
+  const roomData = await fetch("http://localhost:4000/" + id);
+  const json = roomData.json();
+  return {
+    props: {
+      ...json,
+    },
+  };
 }
-export default Room
+
+export default Room;
